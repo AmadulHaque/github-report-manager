@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('week');
             $table->integer('commit_count');
             $table->text('report_content');
+            $table->string('author')->nullable();
+            $table->date('start_date');
+            $table->date('end_date');
             $table->timestamps();
         });
     }

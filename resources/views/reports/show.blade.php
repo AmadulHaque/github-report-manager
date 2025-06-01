@@ -1,6 +1,8 @@
-@extends('layouts.app')
 
+@if (!request()->ajax())
+@extends('layouts.app')
 @section('content')
+@endif
     <div class="card">
         <div class="card-header">
             Weekly Report for {{ $report->repository }} (Week of {{ $report->week }})
@@ -15,4 +17,6 @@
             <a href="{{ route('home') }}" class="btn btn-secondary mt-3">Back to Reports</a>
         </div>
     </div>
+@if (!request()->ajax())
 @endsection
+@endif

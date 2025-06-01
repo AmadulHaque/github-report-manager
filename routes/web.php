@@ -6,3 +6,4 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [ReportController::class, 'index'])->name('home');
 Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
+Route::get('/authors', [ReportController::class, 'authors'])->name('authors');

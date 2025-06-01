@@ -12,6 +12,9 @@ class Report extends Model
         'repository',
         'week',
         'commit_count',
-        'report_content'
+        'report_content',
+        'author',
+        'start_date',
+        'end_date'
     ];
 }

@@ -15,27 +15,34 @@ class ReportService
         $this->githubService = $githubService;
     }
 
-    public function generateWeeklyReport($owner, $repo)
+    public function generateWeeklyReport($data)
     {
-        $commits = $this->githubService->getWeeklyCommits($owner, $repo);
-        $commitCount = count($commits);
+       try {
+            $commits = $this->githubService->getWeeklyCommits($data);
+            $commitCount = count($commits);
 
-        if ($commitCount === 0) {
-            return null;
-        }
+            if ($commitCount === 0) {
+                return null;
+            }
 
-        $reportContent = $this->generateHumanLikeReport($owner, $repo, $commits);
+            $reportContent = $this->generateHumanLikeReport($data, $commits);
 
-        return Report::create([
-            'repository' => "$owner/$repo",
-            'week' => now()->startOfWeek()->format('Y-m-d'),
-            'commit_count' => $commitCount,
-            'report_content' => $reportContent
-        ]);
+            return Report::create([
+                'repository'        => "{$data['owner']}/{$data['repo']}",
+                'week'              => now()->startOfWeek()->format('Y-m-d'),
+                'commit_count'      => $commitCount,
+                'report_content'    => $reportContent,
+                'author'            => $data['author'],
+                'start_date'        => $data['start_date'],
+                'end_date'          => $data['end_date'],
+            ]);
+       } catch (\Throwable $th) {
+            throw $th;
+       }
     }
 
 
-    protected function generateHumanLikeReport($owner, $repo, $commits)
+    protected function generateHumanLikeReport($data ,$commits)
     {
         // Filter out merge commits
         $filteredCommits = array_filter($commits, function ($commit) {
@@ -51,7 +58,13 @@ class ReportService
             return $commit['commit']['message'];
         }, $filteredCommits);
 
-        $prompt = "Write a concise, human-like weekly development report for $owner/$repo. ";
+        $prompt = "Write a concise, human-like weekly development report for {$data['owner']}/{$data['repo']}. ";
+        $prompt .= "\nPeriod: {$data['start_date']} to {$data['end_date']}";
+        if ($data['author']) {
+        }
+        $prompt .= "\nTotal commits: " . count($commits) . "\n";
+        $prompt .= "Commit messages:\n" . implode("\n", $commitMessages) . "\n\n";
+        $prompt .= "Highlight key activities and changes in professional but conversational tone.";
         $prompt .= count($filteredCommits) . " non-merge commits this week. ";
         $prompt .= "Commit messages:\n" . implode("\n", $commitMessages) . "\n\n";
         $prompt .= "Highlight key activities, progress, and notable changes. ";
@@ -76,13 +89,13 @@ class ReportService
             if ($response->successful()) {
                 $content = $response->json();
                 return $content['candidates'][0]['content']['parts'][0]['text'] ??
-                    $this->generateSimpleReport($owner, $repo, $filteredCommits);
+                    $this->generateSimpleReport($data['owner'], $data['repo'], $filteredCommits);
             }
 
             throw new \Exception('API request failed');
         } catch (\Exception $e) {
             \Log::error('Gemini API Error: ' . $e->getMessage());
-            return $this->generateSimpleReport($owner, $repo, $filteredCommits);
+            return $this->generateSimpleReport($data['owner'], $data['repo'],  $filteredCommits);
         }
     }
 

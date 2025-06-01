@@ -21,14 +21,20 @@ class GitHubService
         ]);
     }
 
-    public function getRepositoryCommits($owner, $repo, $since = null)
+    public function getRepositoryCommits($data)
     {
         try {
-            $url = "/repos/{$owner}/{$repo}/commits";
+            $url = "/repos/{$data['owner']}/{$data['repo']}/commits";
 
             $query = [];
-            if ($since) {
-                $query['since'] = $since;
+            if ($data['start_date']) {
+                $query['since'] = $data['start_date'];
+            }
+            if ($data['end_date']) {
+                $query['until'] = $data['end_date'];
+            }
+            if ($data['author']) {
+                $query['author'] = $data['author'];
             }
 
             $response = $this->client->get($url, ['query' => $query]);
@@ -39,9 +45,21 @@ class GitHubService
         }
     }
 
-    public function getWeeklyCommits($owner, $repo)
+
+    public function getRepositoryAuthors($owner, $repo)
     {
-        $oneWeekAgo = now()->subWeek()->toIso8601String();
-        return $this->getRepositoryCommits($owner, $repo, $oneWeekAgo);
+        try {
+            $url = "/repos/{$owner}/{$repo}/contributors";
+            $response = $this->client->get($url);
+            return json_decode($response->getBody(), true);
+        } catch (\Exception $e) {
+            Log::error("GitHub API Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getWeeklyCommits($data)
+    {
+        return $this->getRepositoryCommits($data);
     }
 }
